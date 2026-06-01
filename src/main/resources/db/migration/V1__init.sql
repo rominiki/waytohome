@@ -1,0 +1,3 @@
+-- Phase 1: initial migration
+-- Schema will be built up in subsequent phases (V2, V3, etc.)
+-- Flyway requires at least one migration file to start cleanly
