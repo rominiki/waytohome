@@ -12,6 +12,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import com.rominiki.waytohome.dto.ListingSearchCriteria;
+import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/listings")
@@ -58,5 +60,17 @@ public class ListingController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         listingService.delete(id, auth.getName(), isAdmin);
         return ResponseEntity.noContent().build();
+    }
+
+    public Page<ListingResponse> search(
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) Boolean petFriendly,
+            @RequestParam(required = false) Integer bedrooms,
+            @PageableDefault(size = 10) Pageable pageable) {
+        var criteria = new ListingSearchCriteria(
+                minPrice, maxPrice, location, petFriendly, bedrooms);
+        return listingService.search(criteria, pageable);
     }
 }

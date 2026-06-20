@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import com.rominiki.waytohome.repository.ListingSpecification;
 
 @Service
 @RequiredArgsConstructor
@@ -58,5 +59,10 @@ public class ListingService {
             throw new AccessDeniedException("Not allowed to delete this listing");
         }
         listingRepository.delete(listing);
+    }
+
+    public Page<ListingResponse> search(ListingSearchCriteria criteria, Pageable pageable) {
+        var spec = ListingSpecification.build(criteria);
+        return listingRepository.findAll(spec, pageable).map(ListingResponse::from);
     }
 }
