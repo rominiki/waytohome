@@ -1,6 +1,7 @@
 package com.rominiki.waytohome.controller;
 import com.rominiki.waytohome.dto.*;
 import com.rominiki.waytohome.service.ListingService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,6 +22,7 @@ public class ListingController {
 
     @PostMapping
     @PreAuthorize("hasRole('LANDLORD')")
+    @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<ListingResponse> create(
             @Valid @RequestBody CreateListingRequest req,
             Authentication auth) {
@@ -40,6 +42,7 @@ public class ListingController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('LANDLORD')")
+    @SecurityRequirement(name = "bearerAuth")
     public ListingResponse update(
             @PathVariable Long id,
             @Valid @RequestBody CreateListingRequest req,
@@ -49,6 +52,7 @@ public class ListingController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('LANDLORD') or hasRole('ADMIN')")
+    @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<Void> delete(@PathVariable Long id, Authentication auth) {
         boolean isAdmin = auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
