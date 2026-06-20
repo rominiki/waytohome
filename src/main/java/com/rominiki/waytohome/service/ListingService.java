@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import com.rominiki.waytohome.repository.ListingSpecification;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -64,5 +65,25 @@ public class ListingService {
     public Page<ListingResponse> search(ListingSearchCriteria criteria, Pageable pageable) {
         var spec = ListingSpecification.build(criteria);
         return listingRepository.findAll(spec, pageable).map(ListingResponse::from);
+    }
+
+    public Page<ListingResponse> getPending(Pageable pageable) {
+        return listingRepository
+                .findByStatus(ListingStatus.PENDING, pageable)
+                .map(ListingResponse::from);
+    }
+
+    @Transactional
+    public ListingResponse approve(Long id) {
+        Listing listing = listingRepository.findById(id).orElseThrow();
+        listing.approve();
+        return ListingResponse.from(listingRepository.save(listing));
+    }
+
+    @Transactional
+    public ListingResponse reject(Long id) {
+        Listing listing = listingRepository.findById(id).orElseThrow();
+        listing.setStatus(ListingStatus.REJECTED);
+        return ListingResponse.from(listingRepository.save(listing));
     }
 }

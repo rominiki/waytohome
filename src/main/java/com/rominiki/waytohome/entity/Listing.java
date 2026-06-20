@@ -42,4 +42,11 @@ public class Listing {
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    public void approve() {
+        if (this.status == ListingStatus.REJECTED) {
+            throw new IllegalStateException("Cannot approve an already-rejected listing");
+        }
+        this.status = ListingStatus.APPROVED;
+    }
 }
