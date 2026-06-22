@@ -6,8 +6,13 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Entity @Table(name = "listings")
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
+@Entity
+@Table(name = "listings")
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Listing {
 
     @Id
