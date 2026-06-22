@@ -1,6 +1,7 @@
 package com.rominiki.waytohome.controller;
 import com.rominiki.waytohome.dto.ListingResponse;
 import com.rominiki.waytohome.service.FavoriteService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -12,6 +13,7 @@ import java.util.List;
 @RequestMapping("/api/favorites")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('STUDENT')")
+@SecurityRequirement(name = "bearerAuth")
 public class FavoriteController {
 
     private final FavoriteService favoriteService;

@@ -1,6 +1,7 @@
 package com.rominiki.waytohome.controller;
 import com.rominiki.waytohome.dto.ListingResponse;
 import com.rominiki.waytohome.service.ListingService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/admin/listings")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
+@SecurityRequirement(name = "bearerAuth")
 public class AdminController {
 
     private final ListingService listingService;
