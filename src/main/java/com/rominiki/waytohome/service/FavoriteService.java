@@ -21,10 +21,12 @@ public class FavoriteService {
         User user = userRepository.findByEmail(userEmail).orElseThrow();
         Listing listing = listingRepository.findById(listingId).orElseThrow();
         if (favoriteRepository.existsByUserAndListing(user, listing)) {
-            return; // no error, no duplicate — just do nothing
+            return; // do nothing
         }
         favoriteRepository.save(Favorite.builder()
-                .user(user).listing(listing).build());
+                .user(user)
+                .listing(listing)
+                .build());
     }
 
     @Transactional
