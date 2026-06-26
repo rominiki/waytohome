@@ -1,4 +1,5 @@
 package com.rominiki.waytohome.controller;
+
 import com.rominiki.waytohome.dto.ListingResponse;
 import com.rominiki.waytohome.service.FavoriteService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
