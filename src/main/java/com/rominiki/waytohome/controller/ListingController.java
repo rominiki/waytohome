@@ -63,6 +63,7 @@ public class ListingController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/search")
     public Page<ListingResponse> search(
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
@@ -70,8 +71,9 @@ public class ListingController {
             @RequestParam(required = false) Boolean petFriendly,
             @RequestParam(required = false) Integer bedrooms,
             @PageableDefault(size = 10) Pageable pageable) {
-        var criteria = new ListingSearchCriteria(
-                minPrice, maxPrice, location, petFriendly, bedrooms);
+
+        var criteria = new ListingSearchCriteria(minPrice, maxPrice, location, petFriendly, bedrooms);
+
         return listingService.search(criteria, pageable);
     }
 }
