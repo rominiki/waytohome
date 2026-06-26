@@ -1,4 +1,5 @@
 package com.rominiki.waytohome.entity;
+import com.rominiki.waytohome.dto.CreateListingRequest;
 import com.rominiki.waytohome.enums.ListingStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -53,5 +54,15 @@ public class Listing {
             throw new IllegalStateException("Cannot approve an already-rejected listing");
         }
         this.status = ListingStatus.APPROVED;
+    }
+
+    public void updateFrom(CreateListingRequest req) {
+        this.title = req.title();
+        this.description = req.description();
+        this.price = req.price();
+        this.location = req.location();
+        this.bedrooms = req.bedrooms();
+        this.petFriendly = req.petFriendly();
+        this.accessible = req.accessible();
     }
 }

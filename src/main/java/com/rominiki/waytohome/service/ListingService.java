@@ -49,8 +49,7 @@ public class ListingService {
         if (!listing.getOwner().getEmail().equals(requesterEmail)) {
             throw new AccessDeniedException("You do not own this listing");
         }
-        listing.setTitle(req.title());
-        listing.setPrice(req.price());
+        listing.updateFrom(req);
         return ListingResponse.from(listingRepository.save(listing));
     }
 
