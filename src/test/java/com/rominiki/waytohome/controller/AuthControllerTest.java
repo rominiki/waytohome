@@ -43,8 +43,9 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated()) // 201
-                .andExpect(jsonPath("$.email").value("user@test.com"));
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.email").value("user@test.com"))
+                .andExpect(jsonPath("$.password").doesNotExist());
     }
     @Test
     void register_invalidEmail_returns400() throws Exception {

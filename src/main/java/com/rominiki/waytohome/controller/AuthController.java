@@ -1,6 +1,7 @@
 package com.rominiki.waytohome.controller;
 
 import com.rominiki.waytohome.dto.RegisterRequest;
+import com.rominiki.waytohome.dto.UserResponse;
 import com.rominiki.waytohome.entity.User;
 import com.rominiki.waytohome.service.UserService;
 import jakarta.validation.Valid;
@@ -26,9 +27,9 @@ public class AuthController {
     private final UserDetailsService userDetailsService;
 
     @PostMapping("/register")
-    public ResponseEntity<User> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
         User saved = userService.register(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+        return ResponseEntity.status(HttpStatus.CREATED).body(UserResponse.from(saved));
     }
 
     @PostMapping("/login")
