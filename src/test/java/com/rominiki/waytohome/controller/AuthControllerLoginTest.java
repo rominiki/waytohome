@@ -18,6 +18,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Transactional
 class AuthControllerLoginTest {
+
     @Autowired
     MockMvc mockMvc;
     @Autowired
@@ -25,11 +26,11 @@ class AuthControllerLoginTest {
 
     @Test
     void login_validCredentials_returnsToken() throws Exception {
-        var reg = new RegisterRequest(
-                "login@test.com", "password123", "Test", Role.STUDENT);
+        var reg = new RegisterRequest("login@test.com", "password123", "Test", Role.STUDENT);
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(reg)));
+
         var login = new LoginRequest("login@test.com", "password123");
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -45,6 +46,6 @@ class AuthControllerLoginTest {
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(login)))
-                .andExpect(status().isUnauthorized()); // 401
+                .andExpect(status().isUnauthorized());
     }
 }

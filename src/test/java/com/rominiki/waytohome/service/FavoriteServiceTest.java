@@ -21,10 +21,17 @@ import static org.mockito.ArgumentMatchers.any;
 @ExtendWith(MockitoExtension.class)
 class FavoriteServiceTest {
 
-    @Mock FavoriteRepository favoriteRepository;
-    @Mock UserRepository userRepository;
-    @Mock ListingRepository listingRepository;
-    @InjectMocks FavoriteService favoriteService;
+    @Mock
+    FavoriteRepository favoriteRepository;
+
+    @Mock
+    UserRepository userRepository;
+
+    @Mock
+    ListingRepository listingRepository;
+
+    @InjectMocks
+    FavoriteService favoriteService;
 
     @Test
     void addFavorite_whenNotExists_savesIt() {

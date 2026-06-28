@@ -20,8 +20,10 @@ class UserServiceTest {
 
     @Mock
     UserRepository userRepository;
+
     @Mock
     BCryptPasswordEncoder passwordEncoder;
+
     @InjectMocks
     UserService userService;
 

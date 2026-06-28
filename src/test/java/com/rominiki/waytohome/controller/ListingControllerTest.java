@@ -28,14 +28,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(SecurityConfig.class)
 class ListingControllerTest {
 
-    @Autowired MockMvc mockMvc;
-    @Autowired ObjectMapper objectMapper;
+    @Autowired
+    MockMvc mockMvc;
+
+    @Autowired
+    ObjectMapper objectMapper;
 
     @MockitoBean
     ListingService listingService;
 
-    @MockitoBean JwtService jwtService;
-    @MockitoBean UserDetailsServiceImpl userDetailsService;
+    @MockitoBean
+    JwtService jwtService;
+
+    @MockitoBean
+    UserDetailsServiceImpl userDetailsService;
 
     @Test
     @WithMockUser(roles = "STUDENT")
@@ -47,7 +53,7 @@ class ListingControllerTest {
         mockMvc.perform(post("/api/listings")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isForbidden());   // 403
+                .andExpect(status().isForbidden());
     }
 
     @Test

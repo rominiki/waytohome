@@ -25,11 +25,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(SecurityConfig.class)
 class AdminControllerTest {
 
-    @Autowired MockMvc mockMvc;
+    @Autowired
+    MockMvc mockMvc;
 
-    @MockitoBean ListingService listingService;
-    @MockitoBean JwtService jwtService;
-    @MockitoBean UserDetailsServiceImpl userDetailsService;
+    @MockitoBean
+    ListingService listingService;
+
+    @MockitoBean
+    JwtService jwtService;
+
+    @MockitoBean
+    UserDetailsServiceImpl userDetailsService;
 
     @Test
     @WithMockUser(roles = "STUDENT")
