@@ -28,6 +28,7 @@ The project is built in phases. Phases 1 through 7 are done:
 - **Search and filtering** : listings can be filtered by price range, location, number of bedrooms and pet-friendliness, in any combination, with pagination and sorting. Built with JPA Specifications so the query is assembled from whichever filters are actually supplied.
 - **Favorites** : students can save and unsave listings. Saving the same one twice does nothing instead of erroring or creating duplicates, with a unique constraint in the database as a backstop.
 - **Admin moderation** : admins see pending listings and approve or reject them. Approved listings show up in public search; rejected ones don't.
+- **Real-time messaging** : direct chat between students and landlords about a listing, using WebSockets and STOMP so messages arrive instantly instead of needing a refresh.
 
 Every phase has tests covering both the happy paths and the things that should fail (wrong role, missing token, bad input, and so on).
 
@@ -35,7 +36,6 @@ Every phase has tests covering both the happy paths and the things that should f
 
 Three phases left:
 
-- **Real-time messaging** : direct chat between students and landlords about a listing, using WebSockets and STOMP so messages arrive instantly instead of needing a refresh.
 - **Testing hardening** : switching integration tests over to Testcontainers so they run against a real PostgreSQL instead of assumptions, adding a full end-to-end test that walks the whole user journey, and measuring coverage with JaCoCo.
 - **Polish and deployment** : a multi-stage Dockerfile, a CI pipeline on GitHub Actions, secrets moved out of config and into environment variables, and the app deployed somewhere public.
 
