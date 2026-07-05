@@ -1,4 +1,4 @@
-package com.rominiki.waytohome;
+package com.rominiki.waytohome.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,6 +15,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
+import java.util.UUID;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -34,15 +36,27 @@ class ListingModerationFlowTest {
 
     @Test
     void approvedListing_appearsInPublicSearch() throws Exception {
-        register("landlord@test.com", "password123", "Land Lord", Role.LANDLORD);
-        register("admin@test.com", "password123", "Ad Min", Role.ADMIN);
+        String unique = UUID.randomUUID().toString().substring(0, 8);
+        String title = "Cozy studio " + unique;
 
-        String landlordToken = login("landlord@test.com", "password123");
-        String adminToken = login("admin@test.com", "password123");
+        String landlordEmail = "landlord-" + unique + "@test.com";
+        String adminEmail = "admin-" + unique + "@test.com";
+
+        register(landlordEmail, "password123", "Land Lord", Role.LANDLORD);
+        register(adminEmail, "password123", "Ad Min", Role.ADMIN);
+
+        String landlordToken = login(landlordEmail, "password123");
+        String adminToken = login(adminEmail, "password123");
 
         var req = new CreateListingRequest(
-                "Cozy studio", "Near campus", BigDecimal.valueOf(750),
-                "Fulda", 1, true, false);
+                title,
+                "Near campus",
+                BigDecimal.valueOf(750),
+                "Fulda",
+                1,
+                true,
+                false
+        );
 
         MvcResult createResult = mockMvc.perform(post("/api/listings")
                         .header("Authorization", "Bearer " + landlordToken)
@@ -54,25 +68,59 @@ class ListingModerationFlowTest {
 
         Long listingId = extractId(createResult);
 
-        mockMvc.perform(get("/api/listings"))
+        MvcResult beforeApprovalResult = mockMvc.perform(get("/api/listings"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").isEmpty());
+                .andReturn();
+
+        assertThat(publicListingsContainId(beforeApprovalResult, listingId))
+                .isFalse();
 
         mockMvc.perform(put("/api/admin/listings/" + listingId + "/approve")
                         .header("Authorization", "Bearer " + adminToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("APPROVED"));
 
-        mockMvc.perform(get("/api/listings"))
+        MvcResult afterApprovalResult = mockMvc.perform(get("/api/listings"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").isNotEmpty())
-                .andExpect(jsonPath("$.content[0].title").value("Cozy studio"));
+                .andReturn();
+
+        assertThat(publicListingsContainId(afterApprovalResult, listingId))
+                .isTrue();
+
+        assertThat(publicListingsContainTitle(afterApprovalResult, title))
+                .isTrue();
     }
 
+    private boolean publicListingsContainId(MvcResult result, Long listingId) throws Exception {
+        JsonNode json = objectMapper.readTree(result.getResponse().getContentAsString());
+        JsonNode content = json.get("content");
+
+        for (JsonNode listing : content) {
+            if (listing.get("id").asLong() == listingId) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean publicListingsContainTitle(MvcResult result, String title) throws Exception {
+        JsonNode json = objectMapper.readTree(result.getResponse().getContentAsString());
+        JsonNode content = json.get("content");
+
+        for (JsonNode listing : content) {
+            if (listing.get("title").asText().equals(title)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     private void register(String email, String password, String fullName, Role role)
             throws Exception {
         var req = new RegisterRequest(email, password, fullName, role);
+
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
@@ -81,17 +129,21 @@ class ListingModerationFlowTest {
 
     private String login(String email, String password) throws Exception {
         var req = new LoginRequest(email, password);
+
         MvcResult result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk())
                 .andReturn();
+
         JsonNode json = objectMapper.readTree(result.getResponse().getContentAsString());
+
         return json.get("token").asText();
     }
 
     private Long extractId(MvcResult result) throws Exception {
         JsonNode json = objectMapper.readTree(result.getResponse().getContentAsString());
+
         return json.get("id").asLong();
     }
 }
