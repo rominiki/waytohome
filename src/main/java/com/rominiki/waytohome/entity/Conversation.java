@@ -53,8 +53,7 @@ public class Conversation {
             return false;
         }
 
-        return user.getId().equals(student.getId())
-                || user.getId().equals(landlord.getId());
+        return user.getId().equals(student.getId()) || user.getId().equals(landlord.getId());
     }
 
 
