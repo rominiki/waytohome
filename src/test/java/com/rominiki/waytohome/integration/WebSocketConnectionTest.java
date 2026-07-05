@@ -40,7 +40,7 @@ class WebSocketConnectionTest {
 
         stompClient.setMessageConverter(new MappingJackson2MessageConverter());
 
-        String url = "ws://localhost:" + port + "/ws";
+        String url = "ws://localhost:" + port + "/ws/websocket";
 
         var sessionFuture = stompClient.connectAsync(
                 url,

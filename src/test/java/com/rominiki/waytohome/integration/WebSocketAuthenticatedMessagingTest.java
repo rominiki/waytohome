@@ -70,7 +70,7 @@ class WebSocketAuthenticatedMessagingTest {
 
         WebSocketStompClient stompClient = createStompClient();
 
-        String url = "ws://localhost:" + port + "/ws";
+        String url = "ws://localhost:" + port + "/ws/websocket";
 
         StompSession studentSession = connectWithToken(
                 stompClient,
@@ -124,9 +124,9 @@ class WebSocketAuthenticatedMessagingTest {
         mockMvc.perform(get("/api/conversations/" + conversationId + "/messages")
                         .header("Authorization", "Bearer " + studentToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].content").value("Hi, is this apartment still available?"))
-                .andExpect(jsonPath("$[0].senderName").value("Student User"))
-                .andExpect(jsonPath("$[0].recipientName").value("Landlord User"));
+                .andExpect(jsonPath("$.content[0].content").value("Hi, is this apartment still available?"))
+                .andExpect(jsonPath("$.content[0].senderName").value("Student User"))
+                .andExpect(jsonPath("$.content[0].recipientName").value("Landlord User"));
 
         studentSession.disconnect();
         landlordSession.disconnect();

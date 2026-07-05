@@ -11,7 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
+import com.rominiki.waytohome.dto.ChatMessageRequest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 @RestController
@@ -41,11 +43,16 @@ public class ConversationController {
     }
 
     @GetMapping("/{conversationId}/messages")
-    public List<ChatMessageResponse> getMessages(
+    public Page<ChatMessageResponse> getMessages(
             @PathVariable Long conversationId,
+            Pageable pageable,
             Authentication auth
     ) {
-        return chatMessageService.getMessages(conversationId, auth.getName());
+        return chatMessageService.getMessagesPaginated(
+                conversationId,
+                auth.getName(),
+                pageable
+        );
     }
 
     @PutMapping("/{conversationId}/read")
@@ -55,5 +62,20 @@ public class ConversationController {
             Authentication auth
     ) {
         chatMessageService.markMessagesAsRead(conversationId, auth.getName());
+    }
+
+    @PostMapping("/{conversationId}/messages")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ChatMessageResponse sendMessageByRest(
+            @PathVariable Long conversationId,
+            @Valid @RequestBody ChatMessageRequest request,
+            Authentication auth
+    ) {
+        ChatMessageRequest fixedRequest = new ChatMessageRequest(
+                conversationId,
+                request.content()
+        );
+
+        return chatMessageService.sendMessage(fixedRequest, auth.getName());
     }
 }

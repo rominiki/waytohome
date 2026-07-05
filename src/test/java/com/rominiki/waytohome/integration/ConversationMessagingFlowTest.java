@@ -8,7 +8,6 @@ import com.rominiki.waytohome.dto.LoginRequest;
 import com.rominiki.waytohome.dto.RegisterRequest;
 import com.rominiki.waytohome.dto.StartConversationRequest;
 import com.rominiki.waytohome.enums.Role;
-import com.rominiki.waytohome.service.ChatMessageService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -16,9 +15,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
-
+import java.util.UUID;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -35,18 +33,21 @@ class ConversationMessagingFlowTest {
     @Autowired
     ObjectMapper objectMapper;
 
-    @Autowired
-    ChatMessageService chatMessageService;
-
     @Test
     void studentCanStartConversationSendMessageAndLoadHistory() throws Exception {
-        register("student@test.com", "password123", "Student User", Role.STUDENT);
-        register("landlord@test.com", "password123", "Landlord User", Role.LANDLORD);
-        register("admin@test.com", "password123", "Admin User", Role.ADMIN);
+        String unique = UUID.randomUUID().toString().substring(0, 8);
 
-        String studentToken = login("student@test.com", "password123");
-        String landlordToken = login("landlord@test.com", "password123");
-        String adminToken = login("admin@test.com", "password123");
+        String studentEmail = "student-" + unique + "@test.com";
+        String landlordEmail = "landlord-" + unique + "@test.com";
+        String adminEmail = "admin-" + unique + "@test.com";
+
+        register(studentEmail, "password123", "Student User", Role.STUDENT);
+        register(landlordEmail, "password123", "Landlord User", Role.LANDLORD);
+        register(adminEmail, "password123", "Admin User", Role.ADMIN);
+
+        String studentToken = login(studentEmail, "password123");
+        String landlordToken = login(landlordEmail, "password123");
+        String adminToken = login(adminEmail, "password123");
 
         Long listingId = createListingAsLandlord(landlordToken);
 
@@ -59,15 +60,26 @@ class ConversationMessagingFlowTest {
                 "Hi, is this apartment still available?"
         );
 
-        chatMessageService.sendMessage(messageRequest, "student@test.com");
+        mockMvc.perform(post("/api/conversations/" + conversationId + "/messages")
+                        .header("Authorization", "Bearer " + studentToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(messageRequest)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.conversationId").value(conversationId))
+                .andExpect(jsonPath("$.content").value("Hi, is this apartment still available?"))
+                .andExpect(jsonPath("$.senderName").value("Student User"))
+                .andExpect(jsonPath("$.recipientName").value("Landlord User"))
+                .andExpect(jsonPath("$.read").value(false));
 
         mockMvc.perform(get("/api/conversations/" + conversationId + "/messages")
-                        .header("Authorization", "Bearer " + studentToken))
+                        .header("Authorization", "Bearer " + studentToken)
+                        .param("page", "0")
+                        .param("size", "20"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].content").value("Hi, is this apartment still available?"))
-                .andExpect(jsonPath("$[0].senderName").value("Student User"))
-                .andExpect(jsonPath("$[0].recipientName").value("Landlord User"))
-                .andExpect(jsonPath("$[0].read").value(false));
+                .andExpect(jsonPath("$.content[0].content").value("Hi, is this apartment still available?"))
+                .andExpect(jsonPath("$.content[0].senderName").value("Student User"))
+                .andExpect(jsonPath("$.content[0].recipientName").value("Landlord User"))
+                .andExpect(jsonPath("$.content[0].read").value(false));
 
         mockMvc.perform(get("/api/conversations")
                         .header("Authorization", "Bearer " + studentToken))
@@ -91,6 +103,13 @@ class ConversationMessagingFlowTest {
                 .andExpect(status().isForbidden());
 
         mockMvc.perform(put("/api/conversations/1/read"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/conversations/1/messages")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new ChatMessageRequest(1L, "Hello")
+                        )))
                 .andExpect(status().isForbidden());
     }
 

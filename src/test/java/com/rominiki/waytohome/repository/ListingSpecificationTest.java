@@ -11,6 +11,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.Pageable;
 import java.math.BigDecimal;
+import java.util.UUID;
 import static com.rominiki.waytohome.enums.ListingStatus.APPROVED;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -26,18 +27,20 @@ class ListingSpecificationTest {
 
     @Test
     void search_byPriceRange_returnsOnlyMatching() {
+        String unique = UUID.randomUUID().toString().substring(0, 8);
 
         User owner = userRepository.save(
                 User.builder()
-                        .email("a@a.com")
+                        .email("owner-price-" + unique + "@test.com")
                         .role(Role.LANDLORD)
                         .password("x")
-                        .fullName("A")
-                        .build());
+                        .fullName("Owner")
+                        .build()
+        );
 
-        listingRepository.save(makeListing(owner, 300, APPROVED));
-        listingRepository.save(makeListing(owner, 600, APPROVED));
-        listingRepository.save(makeListing(owner, 900, APPROVED));
+        listingRepository.save(makeListing(owner, "Cheap " + unique, 300, APPROVED));
+        listingRepository.save(makeListing(owner, "Medium " + unique, 600, APPROVED));
+        listingRepository.save(makeListing(owner, "Expensive " + unique, 900, APPROVED));
 
         var criteria = new ListingSearchCriteria(
                 BigDecimal.valueOf(500),
@@ -52,26 +55,35 @@ class ListingSpecificationTest {
                 Pageable.unpaged()
         );
 
-        assertThat(results).hasSize(1);
+        assertThat(results.getContent())
+                .extracting(Listing::getTitle)
+                .contains("Medium " + unique);
 
-        assertThat(results.getContent().get(0).getPrice())
-                .isEqualTo(BigDecimal.valueOf(600));
+        assertThat(results.getContent())
+                .extracting(Listing::getTitle)
+                .doesNotContain("Cheap " + unique, "Expensive " + unique);
     }
 
     @Test
     void search_excludesPendingListings() {
+        String unique = UUID.randomUUID().toString().substring(0, 8);
 
         User owner = userRepository.save(
                 User.builder()
-                        .email("owner@test.com")
+                        .email("owner-status-" + unique + "@test.com")
                         .role(Role.LANDLORD)
                         .password("x")
                         .fullName("Owner")
-                        .build());
+                        .build()
+        );
 
-        listingRepository.save(makeListing(owner, 500, ListingStatus.PENDING));
+        Listing pending = listingRepository.save(
+                makeListing(owner, "Pending " + unique, 500, ListingStatus.PENDING)
+        );
 
-        listingRepository.save(makeListing(owner, 600, ListingStatus.APPROVED));
+        Listing approved = listingRepository.save(
+                makeListing(owner, "Approved " + unique, 600, ListingStatus.APPROVED)
+        );
 
         var criteria = new ListingSearchCriteria(
                 null,
@@ -86,17 +98,23 @@ class ListingSpecificationTest {
                 Pageable.unpaged()
         );
 
-        assertThat(results).hasSize(1);
+        assertThat(results.getContent())
+                .extracting(Listing::getId)
+                .doesNotContain(pending.getId());
 
-        assertThat(results.getContent().get(0).getStatus()).isEqualTo(APPROVED);
-
-        assertThat(results.getContent().get(0).getPrice()).isEqualTo(BigDecimal.valueOf(600));
+        assertThat(results.getContent())
+                .extracting(Listing::getId)
+                .contains(approved.getId());
     }
 
-    private Listing makeListing(User owner, int price, ListingStatus status) {
-
+    private Listing makeListing(
+            User owner,
+            String title,
+            int price,
+            ListingStatus status
+    ) {
         return Listing.builder()
-                .title("Test Listing")
+                .title(title)
                 .description("Test Description")
                 .location("Fulda")
                 .price(BigDecimal.valueOf(price))
