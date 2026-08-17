@@ -1,4 +1,4 @@
-package com.rominiki.waytohome.integration;
+package com.rominiki.waytohome.integration.base;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rominiki.waytohome.dto.*;

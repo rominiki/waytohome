@@ -2,6 +2,8 @@ package com.rominiki.waytohome.service;
 
 import com.rominiki.waytohome.dto.ListingResponse;
 import com.rominiki.waytohome.entity.*;
+import com.rominiki.waytohome.exception.DuplicateFavoriteException;
+import com.rominiki.waytohome.exception.ResourceNotFoundException;
 import com.rominiki.waytohome.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,10 +20,12 @@ public class FavoriteService {
 
     @Transactional
     public void addFavorite(Long listingId, String userEmail) {
-        User user = userRepository.findByEmail(userEmail).orElseThrow();
-        Listing listing = listingRepository.findById(listingId).orElseThrow();
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        Listing listing = listingRepository.findById(listingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Listing not found"));
         if (favoriteRepository.existsByUserAndListing(user, listing)) {
-            return; // do nothing
+            throw new DuplicateFavoriteException(listingId);
         }
         favoriteRepository.save(Favorite.builder()
                 .user(user)
@@ -31,13 +35,16 @@ public class FavoriteService {
 
     @Transactional
     public void removeFavorite(Long listingId, String userEmail) {
-        User user = userRepository.findByEmail(userEmail).orElseThrow();
-        Listing listing = listingRepository.findById(listingId).orElseThrow();
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        Listing listing = listingRepository.findById(listingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Listing not found"));
         favoriteRepository.deleteByUserAndListing(user, listing);
     }
 
     public List<ListingResponse> getFavorites(String userEmail) {
-        User user = userRepository.findByEmail(userEmail).orElseThrow();
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         return favoriteRepository.findByUser(user).stream()
                 .map(f -> ListingResponse.from(f.getListing()))
                 .toList();

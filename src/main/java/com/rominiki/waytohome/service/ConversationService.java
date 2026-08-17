@@ -4,6 +4,7 @@ import com.rominiki.waytohome.dto.ConversationResponse;
 import com.rominiki.waytohome.entity.Conversation;
 import com.rominiki.waytohome.entity.Listing;
 import com.rominiki.waytohome.entity.User;
+import com.rominiki.waytohome.exception.DuplicateConversationException;
 import com.rominiki.waytohome.exception.ResourceNotFoundException;
 import com.rominiki.waytohome.repository.ConversationRepository;
 import com.rominiki.waytohome.repository.ListingRepository;
@@ -35,15 +36,18 @@ public class ConversationService {
             throw new AccessDeniedException("You cannot start a conversation with yourself");
         }
 
-        Conversation conversation = conversationRepository
-                .findByListingAndStudentAndLandlord(listing, student, landlord)
-                .orElseGet(() -> conversationRepository.save(
-                        Conversation.builder()
-                                .listing(listing)
-                                .student(student)
-                                .landlord(landlord)
-                                .build()
-                ));
+        // Check if conversation already exists
+        if (conversationRepository.findByListingAndStudentAndLandlord(listing, student, landlord).isPresent()) {
+            throw new DuplicateConversationException(listingId);
+        }
+
+        Conversation conversation = conversationRepository.save(
+                Conversation.builder()
+                        .listing(listing)
+                        .student(student)
+                        .landlord(landlord)
+                        .build()
+        );
 
         return toResponse(conversation);
     }

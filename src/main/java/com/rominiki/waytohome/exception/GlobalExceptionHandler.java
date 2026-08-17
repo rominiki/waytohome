@@ -29,6 +29,18 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
+    @ExceptionHandler(DuplicateFavoriteException.class)
+    public ResponseEntity<Map<String, String>> handleDuplicateFavorite(DuplicateFavoriteException ex) {
+        Map<String, String> error = Map.of("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    @ExceptionHandler(DuplicateConversationException.class)
+    public ResponseEntity<Map<String, String>> handleDuplicateConversation(DuplicateConversationException ex) {
+        Map<String, String> error = Map.of("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<Map<String, String>> handleAuthError(AuthenticationException ex) {
         return ResponseEntity

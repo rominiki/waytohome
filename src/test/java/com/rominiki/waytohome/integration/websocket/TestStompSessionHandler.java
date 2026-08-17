@@ -1,4 +1,4 @@
-package com.rominiki.waytohome.integration;
+package com.rominiki.waytohome.integration.websocket;
 
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
 

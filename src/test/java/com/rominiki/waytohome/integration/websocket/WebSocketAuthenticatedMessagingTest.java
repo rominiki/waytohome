@@ -1,4 +1,4 @@
-package com.rominiki.waytohome.integration;
+package com.rominiki.waytohome.integration.websocket;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -3,6 +3,7 @@ package com.rominiki.waytohome.service;
 import com.rominiki.waytohome.dto.*;
 import com.rominiki.waytohome.entity.*;
 import com.rominiki.waytohome.enums.ListingStatus;
+import com.rominiki.waytohome.exception.ResourceNotFoundException;
 import com.rominiki.waytohome.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -41,11 +42,13 @@ public class ListingService {
 
     public ListingResponse getById(Long id) {
         return ListingResponse.from(
-                listingRepository.findById(id).orElseThrow());
+                listingRepository.findById(id)
+                        .orElseThrow(() -> new ResourceNotFoundException("Listing not found")));
     }
 
     public ListingResponse update(Long id, CreateListingRequest req, String requesterEmail) {
-        Listing listing = listingRepository.findById(id).orElseThrow();
+        Listing listing = listingRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Listing not found"));
         if (!listing.getOwner().getEmail().equals(requesterEmail)) {
             throw new AccessDeniedException("You do not own this listing");
         }
@@ -54,7 +57,8 @@ public class ListingService {
     }
 
     public void delete(Long id, String requesterEmail, boolean isAdmin) {
-        Listing listing = listingRepository.findById(id).orElseThrow();
+        Listing listing = listingRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Listing not found"));
         boolean isOwner = listing.getOwner().getEmail().equals(requesterEmail);
         if (!isOwner && !isAdmin) {
             throw new AccessDeniedException("Not allowed to delete this listing");
@@ -75,14 +79,16 @@ public class ListingService {
 
     @Transactional
     public ListingResponse approve(Long id) {
-        Listing listing = listingRepository.findById(id).orElseThrow();
+        Listing listing = listingRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Listing not found"));
         listing.approve();
         return ListingResponse.from(listingRepository.save(listing));
     }
 
     @Transactional
     public ListingResponse reject(Long id) {
-        Listing listing = listingRepository.findById(id).orElseThrow();
+        Listing listing = listingRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Listing not found"));
         listing.setStatus(ListingStatus.REJECTED);
         return ListingResponse.from(listingRepository.save(listing));
     }
