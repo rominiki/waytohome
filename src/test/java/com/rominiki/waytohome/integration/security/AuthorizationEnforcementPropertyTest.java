@@ -18,18 +18,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Property-Based Tests for Authorization Enforcement
- * 
- * **Validates: Requirements 4.3**
- * Property 2: Authorization Enforcement
- * 
- * Tests that for ANY endpoint with role-based access control, when a user attempts
- * an action without the required role, the system SHALL return HTTP 403 Forbidden.
- * 
- * This test suite uses parameterized tests to systematically validate authorization
- * enforcement across multiple role-protected endpoints and unauthorized role combinations.
- */
+
 @Transactional
 class AuthorizationEnforcementPropertyTest extends BaseIntegrationTest {
 
@@ -64,20 +53,10 @@ class AuthorizationEnforcementPropertyTest extends BaseIntegrationTest {
         testListingId = createdListing.id();
     }
 
-    /**
-     * Property Test: LANDLORD-only endpoints reject non-LANDLORD roles
-     * 
-     * Tests all endpoints that require LANDLORD role and verifies that
-     * STUDENT and ADMIN users receive 403 Forbidden.
-     */
     @Nested
     @DisplayName("Property 2: Authorization Enforcement - LANDLORD-only endpoints")
     class LandlordOnlyEndpointsTest {
 
-        /**
-         * Property: For any LANDLORD-only endpoint, STUDENT and ADMIN users
-         * attempting the operation receive 403 Forbidden.
-         */
         @ParameterizedTest(name = "{0} as {1} returns 403")
         @MethodSource("landlordOnlyEndpointsWithUnauthorizedRoles")
         @DisplayName("landlordOnlyEndpoint_withWrongRole_returns403Forbidden")
@@ -145,20 +124,10 @@ class AuthorizationEnforcementPropertyTest extends BaseIntegrationTest {
         }
     }
 
-    /**
-     * Property Test: ADMIN-only endpoints reject non-ADMIN roles
-     * 
-     * Tests all endpoints that require ADMIN role and verifies that
-     * STUDENT and LANDLORD users receive 403 Forbidden.
-     */
     @Nested
     @DisplayName("Property 2: Authorization Enforcement - ADMIN-only endpoints")
     class AdminOnlyEndpointsTest {
 
-        /**
-         * Property: For any ADMIN-only endpoint, STUDENT and LANDLORD users
-         * attempting the operation receive 403 Forbidden.
-         */
         @ParameterizedTest(name = "{0} as {1} returns 403")
         @MethodSource("adminOnlyEndpointsWithUnauthorizedRoles")
         @DisplayName("adminOnlyEndpoint_withWrongRole_returns403Forbidden")
@@ -210,20 +179,10 @@ class AuthorizationEnforcementPropertyTest extends BaseIntegrationTest {
         }
     }
 
-    /**
-     * Property Test: DELETE endpoint with LANDLORD or ADMIN role rejects STUDENT
-     * 
-     * Tests the special case of DELETE /api/listings/{id} which allows both
-     * LANDLORD and ADMIN roles, but should reject STUDENT role.
-     */
     @Nested
     @DisplayName("Property 2: Authorization Enforcement - Multi-role endpoints")
     class MultiRoleEndpointsTest {
 
-        /**
-         * Property: For endpoints requiring LANDLORD OR ADMIN role,
-         * STUDENT users attempting the operation receive 403 Forbidden.
-         */
         @ParameterizedTest(name = "DELETE /api/listings/id as {0} returns 403")
         @MethodSource("deleteEndpointWithStudentRole")
         @DisplayName("deleteEndpoint_asStudent_returns403Forbidden")

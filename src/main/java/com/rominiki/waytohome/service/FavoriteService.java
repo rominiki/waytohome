@@ -39,6 +39,12 @@ public class FavoriteService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Listing listing = listingRepository.findById(listingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Listing not found"));
+        
+        // Check if favorite exists before attempting to delete
+        if (!favoriteRepository.existsByUserAndListing(user, listing)) {
+            throw new ResourceNotFoundException("Favorite not found");
+        }
+        
         favoriteRepository.deleteByUserAndListing(user, listing);
     }
 

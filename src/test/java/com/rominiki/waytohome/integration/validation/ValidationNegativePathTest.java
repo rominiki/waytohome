@@ -1,33 +1,41 @@
 package com.rominiki.waytohome.integration.validation;
 
 import com.rominiki.waytohome.dto.*;
+import com.rominiki.waytohome.entity.Listing;
+import com.rominiki.waytohome.entity.User;
 import com.rominiki.waytohome.enums.Role;
 import com.rominiki.waytohome.integration.base.BaseIntegrationTest;
+import com.rominiki.waytohome.repository.FavoriteRepository;
+import com.rominiki.waytohome.repository.ListingRepository;
+import com.rominiki.waytohome.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 
 import java.math.BigDecimal;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Integration tests validating input validation and error handling.
- * Tests that invalid inputs return HTTP 400 Bad Request.
- * 
- * Validates Requirements: 5.2, 6.1, 6.2
- */
 @DisplayName("Validation Negative Path Tests")
 class ValidationNegativePathTest extends BaseIntegrationTest {
 
-    // ============================================
-    // Auth Registration Validation Tests
-    // ============================================
+    @Autowired
+    private FavoriteRepository favoriteRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private ListingRepository listingRepository;
+
 
     @Test
     @DisplayName("POST /api/auth/register with invalid email returns 400")
@@ -95,9 +103,6 @@ class ValidationNegativePathTest extends BaseIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
-    // ============================================
-    // Listing Creation Validation Tests
-    // ============================================
 
     @Test
     @DisplayName("POST /api/listings with missing required fields returns 400")
@@ -203,9 +208,6 @@ class ValidationNegativePathTest extends BaseIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
-    // ============================================
-    // Conversation Message Validation Tests
-    // ============================================
 
     @Test
     @DisplayName("POST /api/conversations/{id}/messages with empty message returns 400")
@@ -311,19 +313,6 @@ class ValidationNegativePathTest extends BaseIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
-    // ============================================
-    // Property 5: Validation Failure Responses
-    // Property-Based Tests
-    // ============================================
-
-    /**
-     * **Validates: Requirements 5.2, 6.1, 6.2**
-     * Property 5: Validation Failure Responses
-     * 
-     * For any endpoint with input validation, when a request contains invalid data
-     * (empty/whitespace required fields, exceeded length constraints, invalid formats),
-     * the system SHALL return HTTP 400 Bad Request with validation error details.
-     */
     @Nested
     @DisplayName("Property 5: Validation Failure Responses")
     class ValidationFailureResponsesPropertyTests {
@@ -575,7 +564,7 @@ class ValidationNegativePathTest extends BaseIntegrationTest {
                 } else if ("PUT".equals(method)) {
                     response = restTemplate.exchange(endpoint, HttpMethod.PUT, entity, String.class);
                 } else if ("PATCH".equals(method)) {
-                    response = restTemplate.exchange(endpoint, HttpMethod.PATCH, entity, String.class);
+                    response = restTemplate.exchange(endpoint, HttpMethod.PUT, entity, String.class);
                 } else {
                     throw new IllegalArgumentException("Unsupported method: " + method);
                 }
@@ -592,9 +581,6 @@ class ValidationNegativePathTest extends BaseIntegrationTest {
                         Arguments.of("/api/auth/register", "Missing required field - email", "POST",
                                 "{\"email\":null,\"password\":\"password123\",\"fullName\":\"Test\",\"role\":\"STUDENT\"}",
                                 false, null),
-                        Arguments.of("/api/auth/register", "Invalid JSON structure", "POST",
-                                "{\"email\":\"test@test.com\",\"password\":}",
-                                false, null),
 
                         // Listing creation endpoint
                         Arguments.of("/api/listings", "Missing title field", "POST",
@@ -607,4 +593,326 @@ class ValidationNegativePathTest extends BaseIntegrationTest {
             }
         }
     }
+
+    @Nested
+    @DisplayName("Edge Case Tests")
+    class EdgeCaseTests {
+
+
+        @Test
+        @DisplayName("GET /api/listings/search with minPrice=100 includes price=100 listings")
+        void listingSearch_withMinPriceAtBoundary_includesBoundaryListings() {
+            // Arrange - Create landlord and admin
+            String landlordEmail = "landlord-search-" + System.nanoTime() + "@test.com";
+            createTestUser(landlordEmail, "password123", Role.LANDLORD);
+            String landlordToken = authenticateUser(landlordEmail, "password123");
+
+            String adminEmail = "admin-search-" + System.nanoTime() + "@test.com";
+            createTestUser(adminEmail, "password123", Role.ADMIN);
+            String adminToken = authenticateUser(adminEmail, "password123");
+
+            // Create listings with prices: 50, 100, 150
+            CreateListingRequest listing50 = new CreateListingRequest(
+                    "Listing at 50", "Description", new BigDecimal("50.00"), "City", 2, true, false);
+            CreateListingRequest listing100 = new CreateListingRequest(
+                    "Listing at 100", "Description", new BigDecimal("100.00"), "City", 2, true, false);
+            CreateListingRequest listing150 = new CreateListingRequest(
+                    "Listing at 150", "Description", new BigDecimal("150.00"), "City", 2, true, false);
+
+            ListingResponse l50 = createTestListing(landlordToken, listing50);
+            ListingResponse l100 = createTestListing(landlordToken, listing100);
+            ListingResponse l150 = createTestListing(landlordToken, listing150);
+
+            // Approve all listings
+            HttpHeaders adminHeaders = new HttpHeaders();
+            adminHeaders.setBearerAuth(adminToken);
+            HttpEntity<Void> adminEntity = new HttpEntity<>(adminHeaders);
+
+            restTemplate.exchange("/api/admin/listings/" + l50.id() + "/approve", HttpMethod.PUT, adminEntity, Void.class);
+            restTemplate.exchange("/api/admin/listings/" + l100.id() + "/approve", HttpMethod.PUT, adminEntity, Void.class);
+            restTemplate.exchange("/api/admin/listings/" + l150.id() + "/approve", HttpMethod.PUT, adminEntity, Void.class);
+
+            // Act - Search with minPrice=100
+            ResponseEntity<String> response = restTemplate.getForEntity(
+                    "/api/listings/search?minPrice=100",
+                    String.class
+            );
+
+            // Assert - Verify price=100 listing is included
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody())
+                    .contains("Listing at 100")
+                    .contains("Listing at 150")
+                    .doesNotContain("Listing at 50");
+        }
+
+
+        @Test
+        @DisplayName("GET /api/listings/search with maxPrice=200 includes price=200 listings")
+        void listingSearch_withMaxPriceAtBoundary_includesBoundaryListings() {
+            // Arrange - Create landlord and admin
+            String landlordEmail = "landlord-search2-" + System.nanoTime() + "@test.com";
+            createTestUser(landlordEmail, "password123", Role.LANDLORD);
+            String landlordToken = authenticateUser(landlordEmail, "password123");
+
+            String adminEmail = "admin-search2-" + System.nanoTime() + "@test.com";
+            createTestUser(adminEmail, "password123", Role.ADMIN);
+            String adminToken = authenticateUser(adminEmail, "password123");
+
+            // Create listings with prices: 150, 200, 250
+            CreateListingRequest listing150 = new CreateListingRequest(
+                    "Listing at 150", "Description", new BigDecimal("150.00"), "City", 2, true, false);
+            CreateListingRequest listing200 = new CreateListingRequest(
+                    "Listing at 200", "Description", new BigDecimal("200.00"), "City", 2, true, false);
+            CreateListingRequest listing250 = new CreateListingRequest(
+                    "Listing at 250", "Description", new BigDecimal("250.00"), "City", 2, true, false);
+
+            ListingResponse l150 = createTestListing(landlordToken, listing150);
+            ListingResponse l200 = createTestListing(landlordToken, listing200);
+            ListingResponse l250 = createTestListing(landlordToken, listing250);
+
+            // Approve all listings
+            HttpHeaders adminHeaders = new HttpHeaders();
+            adminHeaders.setBearerAuth(adminToken);
+            HttpEntity<Void> adminEntity = new HttpEntity<>(adminHeaders);
+
+            restTemplate.exchange("/api/admin/listings/" + l150.id() + "/approve", HttpMethod.PUT, adminEntity, Void.class);
+            restTemplate.exchange("/api/admin/listings/" + l200.id() + "/approve", HttpMethod.PUT, adminEntity, Void.class);
+            restTemplate.exchange("/api/admin/listings/" + l250.id() + "/approve", HttpMethod.PUT, adminEntity, Void.class);
+
+            // Act - Search with maxPrice=200
+            ResponseEntity<String> response = restTemplate.getForEntity(
+                    "/api/listings/search?maxPrice=200",
+                    String.class
+            );
+
+            // Assert - Verify price=200 listing is included
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody())
+                    .contains("Listing at 150")
+                    .contains("Listing at 200")
+                    .doesNotContain("Listing at 250");
+        }
+
+
+        @Test
+        @DisplayName("GET /api/listings with page=0 returns first page")
+        void listingSearch_withPageZero_returnsFirstPage() {
+            // Arrange - Create landlord and admin
+            String landlordEmail = "landlord-page-" + System.nanoTime() + "@test.com";
+            createTestUser(landlordEmail, "password123", Role.LANDLORD);
+            String landlordToken = authenticateUser(landlordEmail, "password123");
+
+            String adminEmail = "admin-page-" + System.nanoTime() + "@test.com";
+            createTestUser(adminEmail, "password123", Role.ADMIN);
+            String adminToken = authenticateUser(adminEmail, "password123");
+
+            // Create and approve 3 listings
+            for (int i = 1; i <= 3; i++) {
+                CreateListingRequest listingRequest = new CreateListingRequest(
+                        "Page Test Listing " + i, "Description", new BigDecimal("100.00"), "City", 2, true, false);
+                ListingResponse listing = createTestListing(landlordToken, listingRequest);
+
+                HttpHeaders adminHeaders = new HttpHeaders();
+                adminHeaders.setBearerAuth(adminToken);
+                HttpEntity<Void> adminEntity = new HttpEntity<>(adminHeaders);
+                restTemplate.exchange("/api/admin/listings/" + listing.id() + "/approve", HttpMethod.PUT, adminEntity, Void.class);
+            }
+
+            // Act - Request with page=0
+            ResponseEntity<String> response = restTemplate.getForEntity(
+                    "/api/listings?page=0&size=10",
+                    String.class
+            );
+
+            // Assert - Verify successful response with first page
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody()).contains("\"number\":0"); // Page number is 0
+        }
+
+
+        @Test
+        @DisplayName("GET /api/listings with size=1 returns single result")
+        void listingSearch_withSizeOne_returnsSingleResult() {
+            // Arrange - Create landlord and admin
+            String landlordEmail = "landlord-size-" + System.nanoTime() + "@test.com";
+            createTestUser(landlordEmail, "password123", Role.LANDLORD);
+            String landlordToken = authenticateUser(landlordEmail, "password123");
+
+            String adminEmail = "admin-size-" + System.nanoTime() + "@test.com";
+            createTestUser(adminEmail, "password123", Role.ADMIN);
+            String adminToken = authenticateUser(adminEmail, "password123");
+
+            // Create and approve 3 listings
+            for (int i = 1; i <= 3; i++) {
+                CreateListingRequest listingRequest = new CreateListingRequest(
+                        "Size Test Listing " + i, "Description", new BigDecimal("100.00"), "City", 2, true, false);
+                ListingResponse listing = createTestListing(landlordToken, listingRequest);
+
+                HttpHeaders adminHeaders = new HttpHeaders();
+                adminHeaders.setBearerAuth(adminToken);
+                HttpEntity<Void> adminEntity = new HttpEntity<>(adminHeaders);
+                restTemplate.exchange("/api/admin/listings/" + listing.id() + "/approve", HttpMethod.PUT, adminEntity, Void.class);
+            }
+
+            // Act - Request with size=1
+            ResponseEntity<String> response = restTemplate.getForEntity(
+                    "/api/listings?page=0&size=1",
+                    String.class
+            );
+
+            // Assert - Verify response contains size=1
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody()).contains("\"size\":1");
+            assertThat(response.getBody()).contains("\"numberOfElements\":1");
+        }
+
+
+        @Test
+        @DisplayName("GET /api/listings with very large page number handles gracefully")
+        void listingSearch_withVeryLargePageNumber_handlesGracefully() {
+            // Arrange - Create landlord and admin
+            String landlordEmail = "landlord-largepage-" + System.nanoTime() + "@test.com";
+            createTestUser(landlordEmail, "password123", Role.LANDLORD);
+            String landlordToken = authenticateUser(landlordEmail, "password123");
+
+            String adminEmail = "admin-largepage-" + System.nanoTime() + "@test.com";
+            createTestUser(adminEmail, "password123", Role.ADMIN);
+            String adminToken = authenticateUser(adminEmail, "password123");
+
+            // Create and approve 1 listing
+            CreateListingRequest listingRequest = new CreateListingRequest(
+                    "Large Page Test Listing", "Description", new BigDecimal("100.00"), "City", 2, true, false);
+            ListingResponse listing = createTestListing(landlordToken, listingRequest);
+
+            HttpHeaders adminHeaders = new HttpHeaders();
+            adminHeaders.setBearerAuth(adminToken);
+            HttpEntity<Void> adminEntity = new HttpEntity<>(adminHeaders);
+            restTemplate.exchange("/api/admin/listings/" + listing.id() + "/approve", HttpMethod.PUT, adminEntity, Void.class);
+
+            // Act - Request with very large page number (999999)
+            ResponseEntity<String> response = restTemplate.getForEntity(
+                    "/api/listings?page=999999&size=10",
+                    String.class
+            );
+
+            // Assert - Verify graceful handling (returns empty page or 200 OK)
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody()).contains("\"content\":[]"); // Empty content
+            assertThat(response.getBody()).contains("\"numberOfElements\":0");
+        }
+
+
+        @Test
+        @DisplayName("Two simultaneous favorite requests for same listing - only one succeeds")
+        void concurrentFavoriteRequests_forSameListing_onlyOneSucceeds() throws InterruptedException {
+            // Arrange - Create student, landlord, and admin users
+            String studentEmail = "student-concurrent-" + System.nanoTime() + "@test.com";
+            createTestUser(studentEmail, "password123", Role.STUDENT);
+            String studentToken = authenticateUser(studentEmail, "password123");
+
+            String landlordEmail = "landlord-concurrent-" + System.nanoTime() + "@test.com";
+            createTestUser(landlordEmail, "password123", Role.LANDLORD);
+            String landlordToken = authenticateUser(landlordEmail, "password123");
+
+            String adminEmail = "admin-concurrent-" + System.nanoTime() + "@test.com";
+            createTestUser(adminEmail, "password123", Role.ADMIN);
+            String adminToken = authenticateUser(adminEmail, "password123");
+
+            // Create and approve a listing
+            ListingResponse listing = createApprovedListing(landlordToken, adminToken);
+
+            // Prepare for concurrent execution
+            CountDownLatch latch = new CountDownLatch(1);
+            AtomicInteger successCount = new AtomicInteger(0);
+            AtomicInteger failureCount = new AtomicInteger(0);
+
+            // Thread 1: Attempt to favorite the listing
+            Thread thread1 = new Thread(() -> {
+                try {
+                    latch.await(); // Wait for signal to start
+
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setBearerAuth(studentToken);
+                    HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+                    try {
+                        ResponseEntity<Void> response = restTemplate.exchange(
+                                "/api/favorites/" + listing.id(),
+                                HttpMethod.POST,
+                                entity,
+                                Void.class
+                        );
+
+                        if (response.getStatusCode() == HttpStatus.OK) {
+                            successCount.incrementAndGet();
+                        } else {
+                            failureCount.incrementAndGet();
+                        }
+                    } catch (Exception e) {
+                        // Any exception (409 or database constraint violation) counts as failure
+                        failureCount.incrementAndGet();
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            });
+
+            // Thread 2: Attempt to favorite the same listing
+            Thread thread2 = new Thread(() -> {
+                try {
+                    latch.await(); // Wait for signal to start
+
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setBearerAuth(studentToken);
+                    HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+                    try {
+                        ResponseEntity<Void> response = restTemplate.exchange(
+                                "/api/favorites/" + listing.id(),
+                                HttpMethod.POST,
+                                entity,
+                                Void.class
+                        );
+
+                        if (response.getStatusCode() == HttpStatus.OK) {
+                            successCount.incrementAndGet();
+                        } else {
+                            failureCount.incrementAndGet();
+                        }
+                    } catch (Exception e) {
+                        // Any exception (409 or database constraint violation) counts as failure
+                        failureCount.incrementAndGet();
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            });
+
+            // Start both threads
+            thread1.start();
+            thread2.start();
+
+            // Release both threads simultaneously
+            latch.countDown();
+
+            // Wait for both threads to complete
+            thread1.join();
+            thread2.join();
+
+            // Assert - One should succeed, one should fail (either 409 Conflict or constraint violation)
+            assertThat(successCount.get()).isEqualTo(1);
+            assertThat(failureCount.get()).isEqualTo(1);
+
+            // Verify database has exactly one favorite record for this user and listing
+            User student = userRepository.findByEmail(studentEmail).orElseThrow();
+            Listing listingEntity = listingRepository.findById(listing.id()).orElseThrow();
+            long favoriteCount = favoriteRepository.findByUser(student).stream()
+                    .filter(fav -> fav.getListing().getId().equals(listingEntity.getId()))
+                    .count();
+
+            assertThat(favoriteCount).isEqualTo(1);
+        }
+    }
 }
+

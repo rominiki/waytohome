@@ -1,6 +1,7 @@
 package com.rominiki.waytohome.security;
 
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -68,7 +69,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             }
-        } catch (ExpiredJwtException e) {}
+        } catch (JwtException e) {
+            // Catch JWT-specific exceptions (ExpiredJwtException, MalformedJwtException, etc.)
+            // and continue the filter chain without authentication
+        }
         filterChain.doFilter(request, response);
     }
 }

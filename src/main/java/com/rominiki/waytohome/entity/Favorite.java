@@ -5,7 +5,13 @@ import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "favorites")
+@Table(
+    name = "favorites",
+    uniqueConstraints = @UniqueConstraint(
+        name = "uq_favorites_user_listing",
+        columnNames = {"user_id", "listing_id"}
+    )
+)
 @Getter
 @Setter
 @Builder

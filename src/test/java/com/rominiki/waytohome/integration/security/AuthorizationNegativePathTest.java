@@ -18,18 +18,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Integration tests for authorization negative path scenarios.
- * Validates that endpoints properly reject requests from authenticated users
- * who lack the required role or permissions (403 Forbidden).
- * 
- * These tests verify Property 2 (Authorization Enforcement) and Property 3 (Admin Endpoint Protection).
- * All users in these tests have valid JWT tokens but lack the required role for the operation.
- * 
- * Validates Requirements: 4.3, 4.4, 4.5, 4.6
- * Property 2: Authorization Enforcement
- * Property 3: Admin Endpoint Protection
- */
+
 @Transactional
 class AuthorizationNegativePathTest extends BaseIntegrationTest {
 
@@ -64,10 +53,6 @@ class AuthorizationNegativePathTest extends BaseIntegrationTest {
         testListingId = createdListing.id();
     }
 
-    /**
-     * Test: STUDENT attempting POST /api/listings returns 403
-     * Validates Requirement 4.4: Students cannot create listings
-     */
     @Test
     @DisplayName("POST /api/listings as STUDENT returns 403 Forbidden")
     void createListing_asStudent_returns403() {
@@ -98,10 +83,6 @@ class AuthorizationNegativePathTest extends BaseIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
-    /**
-     * Test: LANDLORD attempting PATCH /api/admin/listings/{id}/approve returns 403
-     * Validates Requirement 4.5: Landlords cannot approve listings
-     */
     @Test
     @DisplayName("PATCH /api/admin/listings/{id}/approve as LANDLORD returns 403 Forbidden")
     void approveListing_asLandlord_returns403() {
@@ -122,10 +103,6 @@ class AuthorizationNegativePathTest extends BaseIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
-    /**
-     * Test: STUDENT attempting GET /api/admin/users returns 403
-     * Validates Requirement 4.6: Non-admin users cannot access admin endpoints
-     */
     @Test
     @DisplayName("GET /api/admin/users as STUDENT returns 403 Forbidden")
     void getUsers_asStudent_returns403() {
@@ -146,10 +123,6 @@ class AuthorizationNegativePathTest extends BaseIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
-    /**
-     * Test: LANDLORD attempting GET /api/admin/users returns 403
-     * Validates Requirement 4.6: Non-admin users cannot access admin endpoints
-     */
     @Test
     @DisplayName("GET /api/admin/users as LANDLORD returns 403 Forbidden")
     void getUsers_asLandlord_returns403() {
@@ -170,22 +143,6 @@ class AuthorizationNegativePathTest extends BaseIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
-    /**
-     * Property 3: Admin Endpoint Protection
-     * 
-     * For any admin-only endpoint, when a non-admin user (STUDENT or LANDLORD) 
-     * attempts to access it, the system SHALL return HTTP 403 Forbidden.
-     * 
-     * **Validates: Requirements 4.6**
-     * 
-     * This parameterized test covers all admin endpoints in AdminController:
-     * - GET /api/admin/listings/pending
-     * - PUT /api/admin/listings/{id}/approve
-     * - PUT /api/admin/listings/{id}/reject
-     * 
-     * Each endpoint is tested with both STUDENT and LANDLORD roles to ensure
-     * comprehensive protection of admin-only functionality.
-     */
     @ParameterizedTest
     @MethodSource("adminEndpointTestCases")
     @DisplayName("Property 3: All admin endpoints return 403 for non-admin users")
@@ -211,14 +168,6 @@ class AuthorizationNegativePathTest extends BaseIntegrationTest {
                 .isEqualTo(HttpStatus.FORBIDDEN);
     }
 
-    /**
-     * Provides test cases for Property 3: Admin Endpoint Protection
-     * 
-     * Returns a stream of arguments with:
-     * - endpoint: The admin endpoint URL (using a placeholder ID for dynamic resources)
-     * - method: The HTTP method
-     * - role: The user role (for logging/debugging)
-     */
     private static Stream<Arguments> adminEndpointTestCases() {
         return Stream.of(
                 // GET /api/admin/listings/pending - STUDENT

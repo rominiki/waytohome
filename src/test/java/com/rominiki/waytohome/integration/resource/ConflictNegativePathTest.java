@@ -9,27 +9,16 @@ import org.springframework.http.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Integration tests validating conflict scenarios for resource operations.
- * Tests that duplicate operations return HTTP 409 Conflict.
- * 
- * Validates Requirements: 5.3, 5.4, 5.5
- */
+
 @DisplayName("Conflict Negative Path Tests")
 class ConflictNegativePathTest extends BaseIntegrationTest {
 
-    // ============================================
-    // Duplicate Email Registration Tests
-    // ============================================
-
-    /**
-     * Test for Requirement 5.3: Duplicate email registration returns 409
-     */
     @Test
     @DisplayName("POST /api/auth/register with duplicate email returns 409")
     void register_duplicateEmail_returns409() {
-        // Arrange - Create first user with specific email
-        String email = "duplicate@test.com";
+        // Arrange - Create first user with specific email using unique ID to avoid test pollution
+        String uniqueId = String.valueOf(System.currentTimeMillis()) + "-" + Thread.currentThread().getId();
+        String email = "duplicate-" + uniqueId + "@test.com";
         RegisterRequest firstRequest = new RegisterRequest(
                 email,
                 "password123",
@@ -67,13 +56,7 @@ class ConflictNegativePathTest extends BaseIntegrationTest {
         assertThat(duplicateResponse.getBody()).contains("Email already registered");
     }
 
-    // ============================================
-    // Duplicate Favorite Tests
-    // ============================================
 
-    /**
-     * Test for Requirement 5.4: Duplicate favorite returns 409
-     */
     @Test
     @DisplayName("POST /api/favorites/{listingId} with duplicate favorite returns 409")
     void addFavorite_duplicateFavorite_returns409() {
@@ -106,7 +89,7 @@ class ConflictNegativePathTest extends BaseIntegrationTest {
         );
         
         // Assert first favorite succeeds
-        assertThat(firstFavoriteResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(firstFavoriteResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         
         // Act - Attempt to add the same favorite again
         ResponseEntity<String> duplicateFavoriteResponse = restTemplate.exchange(
@@ -121,13 +104,6 @@ class ConflictNegativePathTest extends BaseIntegrationTest {
         assertThat(duplicateFavoriteResponse.getBody()).contains("already favorited");
     }
 
-    // ============================================
-    // Duplicate Conversation Tests
-    // ============================================
-
-    /**
-     * Test for Requirement 5.5: Duplicate conversation start returns 409
-     */
     @Test
     @DisplayName("POST /api/conversations with duplicate conversation returns 409")
     void startConversation_duplicateConversation_returns409() {

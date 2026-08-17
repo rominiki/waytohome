@@ -16,12 +16,6 @@ import com.rominiki.waytohome.integration.base.BaseIntegrationTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * End-to-end integration test that validates the complete happy path user journey
- * from registration through messaging between student and landlord.
- * 
- * Validates Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7
- */
 @Transactional
 class EndToEndHappyPathTest extends BaseIntegrationTest {
 

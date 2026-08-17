@@ -1,5 +1,6 @@
 package com.rominiki.waytohome.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -59,5 +60,18 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleResourceNotFound(ResourceNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(Map.of("message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, String>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        // Check if it's a duplicate favorite constraint violation
+        String message = ex.getMessage();
+        if (message != null && message.toLowerCase().contains("uq_favorites_user_listing")) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("message", "Listing already favorited"));
+        }
+        // For other data integrity violations, return a generic message
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("message", "Data integrity constraint violated"));
     }
 }

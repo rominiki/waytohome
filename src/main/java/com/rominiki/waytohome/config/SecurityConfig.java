@@ -1,6 +1,7 @@
 package com.rominiki.waytohome.config;
 import com.rominiki.waytohome.security.JwtAuthenticationFilter;
 import com.rominiki.waytohome.security.UserDetailsServiceImpl;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

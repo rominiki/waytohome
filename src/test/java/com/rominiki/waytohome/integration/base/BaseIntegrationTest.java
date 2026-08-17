@@ -10,20 +10,23 @@ import org.springframework.http.*;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import java.math.BigDecimal;
 
 
-@Testcontainers
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public abstract class BaseIntegrationTest {
 
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
+    // Singleton container shared across ALL test classes
+    private static final PostgreSQLContainer<?> postgres;
+
+    static {
+        postgres = new PostgreSQLContainer<>("postgres:16")
+                .withDatabaseName("testdb")
+                .withUsername("test")
+                .withPassword("test")
+                .withReuse(true);
+        postgres.start();
+    }
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
@@ -56,6 +59,11 @@ public abstract class BaseIntegrationTest {
         headers.setBearerAuth(token);
         HttpEntity<CreateListingRequest> entity = new HttpEntity<>(request, headers);
         ResponseEntity<ListingResponse> response = restTemplate.postForEntity("/api/listings", entity, ListingResponse.class);
+        
+        if (response.getStatusCode().isError() || response.getBody() == null) {
+            throw new RuntimeException("Failed to create listing - Status: " + response.getStatusCode() + ", Body: " + response.getBody());
+        }
+        
         return response.getBody();
     }
 
@@ -71,21 +79,25 @@ public abstract class BaseIntegrationTest {
         );
         ListingResponse listing = createTestListing(landlordToken, listingRequest);
 
+        if (listing == null) {
+            throw new RuntimeException("Failed to create listing - createTestListing returned null");
+        }
+
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(adminToken);
         HttpEntity<Void> entity = new HttpEntity<>(headers);
-        restTemplate.exchange(
+        ResponseEntity<ListingResponse> approveResponse = restTemplate.exchange(
                 "/api/admin/listings/" + listing.id() + "/approve",
-                HttpMethod.PATCH,
+                HttpMethod.PUT,
                 entity,
                 ListingResponse.class
         );
 
-        return restTemplate.exchange(
-                "/api/listings/" + listing.id(),
-                HttpMethod.GET,
-                entity,
-                ListingResponse.class
-        ).getBody();
+        if (approveResponse.getBody() == null) {
+            throw new RuntimeException("Failed to approve listing - approval returned null");
+        }
+
+        // Return the approved listing directly from the approve response
+        return approveResponse.getBody();
     }
 }

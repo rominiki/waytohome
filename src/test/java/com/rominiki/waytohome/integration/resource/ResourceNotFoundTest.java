@@ -18,18 +18,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Integration tests for resource not found scenarios (404 responses).
- * Validates that endpoints properly return HTTP 404 Not Found when 
- * referencing non-existent resources.
- * 
- * This test class validates Property 4 (Resource Not Found Handling):
- * For any endpoint that accepts a resource ID parameter, when a request 
- * references a non-existent ID, the system SHALL return HTTP 404 Not Found.
- * 
- * Validates Requirement 5.1
- * Property 4: Resource Not Found Handling
- */
+
 @Transactional
 class ResourceNotFoundTest extends BaseIntegrationTest {
 
@@ -47,11 +36,7 @@ class ResourceNotFoundTest extends BaseIntegrationTest {
         adminToken = authenticateUser("admin@test.com", "password123");
     }
 
-    /**
-     * Test: GET /api/listings/999999 returns 404
-     * Validates that retrieving a non-existent listing returns 404 Not Found
-     * Note: This endpoint is public and doesn't require authentication
-     */
+
     @Test
     @DisplayName("GET /api/listings/999999 returns 404 Not Found")
     void getListing_nonExistentId_returns404() {
@@ -68,10 +53,7 @@ class ResourceNotFoundTest extends BaseIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
-    /**
-     * Test: PATCH /api/admin/listings/999999/approve returns 404
-     * Validates that attempting to approve a non-existent listing returns 404 Not Found
-     */
+
     @Test
     @DisplayName("PUT /api/admin/listings/999999/approve returns 404 Not Found")
     void approveListing_nonExistentId_returns404() {
@@ -94,10 +76,7 @@ class ResourceNotFoundTest extends BaseIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
-    /**
-     * Test: POST /api/favorites/{listingId} with non-existent listing ID returns 404
-     * Validates that attempting to favorite a non-existent listing returns 404 Not Found
-     */
+
     @Test
     @DisplayName("POST /api/favorites/{listingId} with non-existent listing ID returns 404 Not Found")
     void createFavorite_nonExistentListingId_returns404() {
@@ -120,10 +99,7 @@ class ResourceNotFoundTest extends BaseIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
-    /**
-     * Test: POST /api/conversations with non-existent listing ID returns 404
-     * Validates that attempting to start a conversation with a non-existent listing returns 404 Not Found
-     */
+
     @Test
     @DisplayName("POST /api/conversations with non-existent listing ID returns 404 Not Found")
     void startConversation_nonExistentListingId_returns404() {
@@ -147,10 +123,7 @@ class ResourceNotFoundTest extends BaseIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
-    /**
-     * Test: GET /api/conversations/999999/messages returns 404
-     * Validates that attempting to retrieve messages from a non-existent conversation returns 404 Not Found
-     */
+
     @Test
     @DisplayName("GET /api/conversations/999999/messages returns 404 Not Found")
     void getMessages_nonExistentConversationId_returns404() {
@@ -173,20 +146,7 @@ class ResourceNotFoundTest extends BaseIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
-    /**
-     * Property-Based Tests for Resource Not Found Handling
-     * 
-     * **Validates: Requirements 5.1**
-     * 
-     * Property 4: Resource Not Found Handling
-     * For any endpoint that accepts a resource ID parameter, when a request references 
-     * a non-existent ID, the system SHALL return HTTP 404 Not Found.
-     * 
-     * Feature: testing-hardening-coverage, Property 4: Resource Not Found Handling
-     * 
-     * This nested class uses parameterized tests to verify that ALL ID-based endpoints
-     * consistently return 404 for various non-existent IDs (large positive, zero, negative).
-     */
+
     @Nested
     @DisplayName("Property-Based Tests: Resource Not Found Handling")
     class PropertyBasedResourceNotFoundTests {
@@ -209,10 +169,7 @@ class ResourceNotFoundTest extends BaseIntegrationTest {
             );
         }
 
-        /**
-         * Provides non-existent ID values to test with.
-         * Tests boundary and edge cases: large positive, zero, negative.
-         */
+
         private static Stream<Long> provideNonExistentIds() {
             return Stream.of(
                     999999L,    // Large positive number (unlikely to exist)
@@ -221,12 +178,7 @@ class ResourceNotFoundTest extends BaseIntegrationTest {
             );
         }
 
-        /**
-         * Property Test: All ID-based GET endpoints return 404 for non-existent IDs
-         * 
-         * Tests the universal property that any endpoint accepting a resource ID
-         * must return 404 when that ID does not exist in the system.
-         */
+
         @ParameterizedTest(name = "{3} with ID={0} returns 404")
         @MethodSource("provideGetEndpointsWithIds")
         @DisplayName("All GET endpoints with non-existent IDs return 404 Not Found")
@@ -254,12 +206,7 @@ class ResourceNotFoundTest extends BaseIntegrationTest {
                     .isEqualTo(HttpStatus.NOT_FOUND);
         }
 
-        /**
-         * Property Test: All ID-based POST endpoints return 404 for non-existent IDs
-         * 
-         * Tests POST endpoints that reference resource IDs (favorites, conversations)
-         * to ensure they return 404 when the referenced resource doesn't exist.
-         */
+
         @ParameterizedTest(name = "{3} with ID={0} returns 404")
         @MethodSource("providePostEndpointsWithIds")
         @DisplayName("All POST endpoints with non-existent IDs return 404 Not Found")
@@ -293,12 +240,7 @@ class ResourceNotFoundTest extends BaseIntegrationTest {
                     .isEqualTo(HttpStatus.NOT_FOUND);
         }
 
-        /**
-         * Property Test: All ID-based PUT/PATCH endpoints return 404 for non-existent IDs
-         * 
-         * Tests update endpoints (approve listing) to ensure they return 404
-         * when attempting to update a non-existent resource.
-         */
+
         @ParameterizedTest(name = "{3} with ID={0} returns 404")
         @MethodSource("providePutEndpointsWithIds")
         @DisplayName("All PUT/PATCH endpoints with non-existent IDs return 404 Not Found")
@@ -324,10 +266,7 @@ class ResourceNotFoundTest extends BaseIntegrationTest {
                     .isEqualTo(HttpStatus.NOT_FOUND);
         }
 
-        /**
-         * Provides GET endpoints with non-existent IDs for testing.
-         * Combines endpoints with various non-existent ID values.
-         */
+
         private static Stream<Arguments> provideGetEndpointsWithIds() {
             return Stream.of(
                     // GET /api/listings/{id} - public endpoint
@@ -342,9 +281,7 @@ class ResourceNotFoundTest extends BaseIntegrationTest {
             );
         }
 
-        /**
-         * Provides POST endpoints with non-existent IDs for testing.
-         */
+
         private static Stream<Arguments> providePostEndpointsWithIds() {
             return Stream.of(
                     // POST /api/favorites/{listingId}
@@ -359,9 +296,7 @@ class ResourceNotFoundTest extends BaseIntegrationTest {
             );
         }
 
-        /**
-         * Provides PUT/PATCH endpoints with non-existent IDs for testing.
-         */
+
         private static Stream<Arguments> providePutEndpointsWithIds() {
             return Stream.of(
                     // PUT /api/admin/listings/{id}/approve

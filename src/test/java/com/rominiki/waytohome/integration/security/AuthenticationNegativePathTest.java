@@ -18,17 +18,6 @@ import com.rominiki.waytohome.integration.base.BaseIntegrationTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Integration tests for authentication negative path scenarios.
- * Validates that protected endpoints properly reject requests without valid authentication.
- * 
- * Note: Spring Security returns 403 FORBIDDEN for requests without valid authentication
- * when the filter chain continues after JWT validation failure. This is the expected
- * behavior in this implementation.
- * 
- * Validates Requirements: 4.1, 4.2
- * Property 1: Authentication Failure Consistency
- */
 @Transactional
 class AuthenticationNegativePathTest extends BaseIntegrationTest {
 
@@ -254,25 +243,12 @@ class AuthenticationNegativePathTest extends BaseIntegrationTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     }
 
-    /**
-     * Property-Based Test: Authentication Failure Consistency
-     * **Validates: Requirements 4.1, 4.2**
-     * 
-     * Property 1: For any protected endpoint, when a request is made without a valid
-     * authentication token (missing, invalid, or expired), the system SHALL return
-     * HTTP 401 Unauthorized or HTTP 403 Forbidden.
-     * 
-     * This test validates the universal behavior across multiple endpoints using
-     * parameterized tests to cover different protected endpoints efficiently.
-     */
+
     @Nested
     @DisplayName("Property 1: Authentication Failure Consistency")
     class PropertyBasedAuthenticationTests {
 
-        /**
-         * Provides test data for protected endpoints without token.
-         * Returns a stream of endpoint configurations (HTTP method, URI, request body).
-         */
+
         private static Stream<Arguments> protectedEndpointsWithoutToken() {
             return Stream.of(
                     // Listing endpoints
@@ -294,9 +270,7 @@ class AuthenticationNegativePathTest extends BaseIntegrationTest {
             );
         }
 
-        /**
-         * Provides test data for protected endpoints with invalid token.
-         */
+
         private static Stream<Arguments> protectedEndpointsWithInvalidToken() {
             return Stream.of(
                     // Listing endpoints

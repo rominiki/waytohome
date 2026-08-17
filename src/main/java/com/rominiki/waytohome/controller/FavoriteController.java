@@ -4,6 +4,7 @@ import com.rominiki.waytohome.dto.ListingResponse;
 import com.rominiki.waytohome.service.FavoriteService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -22,7 +23,7 @@ public class FavoriteController {
     @PostMapping("/{listingId}")
     public ResponseEntity<Void> add(@PathVariable Long listingId, Authentication auth) {
         favoriteService.addFavorite(listingId, auth.getName());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @DeleteMapping("/{listingId}")

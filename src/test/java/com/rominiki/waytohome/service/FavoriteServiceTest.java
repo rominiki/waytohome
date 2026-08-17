@@ -48,7 +48,7 @@ class FavoriteServiceTest {
     }
 
     @Test
-    void addFavorite_whenAlreadyExists_doesNotSaveAgain() {
+    void addFavorite_whenAlreadyExists_throwsDuplicateFavoriteException() {
         var user = User.builder().email("s@test.com").build();
         var listing = Listing.builder().id(1L).build();
         when(userRepository.findByEmail("s@test.com"))
@@ -57,7 +57,12 @@ class FavoriteServiceTest {
                 .thenReturn(Optional.of(listing));
         when(favoriteRepository.existsByUserAndListing(user, listing))
                 .thenReturn(true); // already favorited
-        favoriteService.addFavorite(1L, "s@test.com");
+        
+        org.junit.jupiter.api.Assertions.assertThrows(
+                com.rominiki.waytohome.exception.DuplicateFavoriteException.class,
+                () -> favoriteService.addFavorite(1L, "s@test.com")
+        );
+        
         verify(favoriteRepository, never()).save(any());
     }
 }

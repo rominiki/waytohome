@@ -93,7 +93,7 @@ class ConversationServiceTest {
     }
 
     @Test
-    void startConversation_whenAlreadyExisting_returnsExistingAndDoesNotSave() {
+    void startConversation_whenAlreadyExisting_throwsDuplicateConversationException() {
         User student = User.builder()
                 .id(1L)
                 .email("student@test.com")
@@ -133,11 +133,9 @@ class ConversationServiceTest {
                 listing, student, landlord
         )).thenReturn(Optional.of(existingConversation));
 
-        ConversationResponse response =
-                conversationService.startConversation(10L, "student@test.com");
-
-        assertThat(response.id()).isEqualTo(100L);
-        assertThat(response.listingId()).isEqualTo(10L);
+        assertThatThrownBy(() ->
+                conversationService.startConversation(10L, "student@test.com")
+        ).isInstanceOf(com.rominiki.waytohome.exception.DuplicateConversationException.class);
 
         verify(conversationRepository, never()).save(any(Conversation.class));
     }
