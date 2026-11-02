@@ -34,9 +34,9 @@ Every phase has tests covering both the happy paths and the things that should f
 
 ## Still to come
 
-Three phases left:
+Two phases left:
 
-- **Testing hardening** : switching integration tests over to Testcontainers so they run against a real PostgreSQL instead of assumptions, adding a full end-to-end test that walks the whole user journey, and measuring coverage with JaCoCo.
+- **Testing hardening** : switching integration tests over to Testcontainers so they run against a real PostgreSQL instead of assumptions, adding a full end-to-end test that walks the whole user journey, and measuring coverage with JaCoCo.(Half Done)
 - **Polish and deployment** : a multi-stage Dockerfile, a CI pipeline on GitHub Actions, secrets moved out of config and into environment variables, and the app deployed somewhere public.
 
 ## Running it locally
